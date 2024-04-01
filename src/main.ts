@@ -44,88 +44,40 @@ for (let i = 0; i < positionAttribute.count; i+=6) {
 
 geometry.setAttribute('color', new THREE.Float32BufferAttribute(threeColors, 3))
 
-const cube1 = new THREE.Mesh(geometry, material)
-cube1.position.set(-1.1, 0, 0)
+const cubes: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = []
 
-const cube2 = new THREE.Mesh(geometry, material)
-cube2.position.set(0, 0, 0)
+const cubesNumber = 3
+for (let i = 0; i < cubesNumber; i++) {
+  for (let j = 0; j < cubesNumber; j++) {
+    for (let k = 0; k < cubesNumber; k++) {
+      const edges = new THREE.EdgesGeometry(geometry); 
+      const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({color: 0x000000, linewidth: 10})); 
+      const cube = new THREE.Mesh(geometry, material)
+      line.material.linewidth = 10
+      cube.add(line)
+      cube.position.set(i, j, k)
+      cubes.push(cube)
+    }
+  }
+}
 
-const cube3 = new THREE.Mesh(geometry, material)
-cube3.position.set(1.1, 0, 0)
+for (var cube of cubes)
+  scene.add(cube)
 
-const cube4 = new THREE.Mesh(geometry, material)
-cube4.position.set(-1.1, 1.1, 0)
+const quaternion = new THREE.Quaternion();
+const axis = new THREE.Vector3(0, 1, 1)
+const degree = 45
+quaternion.setFromAxisAngle(axis.normalize(), THREE.MathUtils.degToRad(degree));
 
-const cube5 = new THREE.Mesh(geometry, material)
-cube5.position.set(0, 1.1, 0)
+camera.position.z = 7.5;
 
-const cube6 = new THREE.Mesh(geometry, material)
-cube6.position.set(1.1, 1.1, 0)
+function animate() {
+  requestAnimationFrame(animate);
+	renderer.render(scene, camera);
+}
+animate();
 
-const cube7 = new THREE.Mesh(geometry, material)
-cube7.position.set(-1.1, -1.1, 0)
-
-const cube8 = new THREE.Mesh(geometry, material)
-cube8.position.set(0, -1.1, 0)
-
-const cube9 = new THREE.Mesh(geometry, material)
-cube9.position.set(1.1, -1.1, 0)
-
-const cube10 = new THREE.Mesh(geometry, material)
-cube10.position.set(-1.1, 0, 1.1)
-
-const cube11 = new THREE.Mesh(geometry, material)
-cube11.position.set(0, 0, 1.1)
-
-const cube12 = new THREE.Mesh(geometry, material)
-cube12.position.set(1.1, 0, 1.1)
-
-const cube13 = new THREE.Mesh(geometry, material)
-cube13.position.set(-1.1, 1.1, 1.1)
-
-const cube14 = new THREE.Mesh(geometry, material)
-cube14.position.set(0, 1.1, 1.1)
-
-const cube15 = new THREE.Mesh(geometry, material)
-cube15.position.set(1.1, 1.1, 1.1)
-
-const cube16 = new THREE.Mesh(geometry, material)
-cube16.position.set(-1.1, -1.1, 1.1)
-
-const cube17 = new THREE.Mesh(geometry, material)
-cube17.position.set(0, -1.1, 1.1)
-
-const cube18 = new THREE.Mesh(geometry, material)
-cube18.position.set(1.1, -1.1, 1.1)
-
-const cube19 = new THREE.Mesh(geometry, material)
-cube19.position.set(-1.1, 0, -1.1)
-
-const cube20 = new THREE.Mesh(geometry, material)
-cube20.position.set(0, 0, -1.1)
-
-const cube21 = new THREE.Mesh(geometry, material)
-cube21.position.set(1.1, 0, -1.1)
-
-const cube22 = new THREE.Mesh(geometry, material)
-cube22.position.set(-1.1, 1.1, -1.1)
-
-const cube23 = new THREE.Mesh(geometry, material)
-cube23.position.set(0, 1.1, -1.1)
-
-const cube24 = new THREE.Mesh(geometry, material)
-cube24.position.set(1.1, 1.1, -1.1)
-
-const cube25 = new THREE.Mesh(geometry, material)
-cube25.position.set(-1.1, -1.1, -1.1)
-
-const cube26 = new THREE.Mesh(geometry, material)
-cube26.position.set(0, -1.1, -1.1)
-
-const cube27 = new THREE.Mesh(geometry, material)
-cube27.position.set(1.1, -1.1, -1.1)
-
-const group = new THREE.Group();
+/*
 group.add(cube1);
 group.add(cube2);
 group.add(cube3);
@@ -153,11 +105,114 @@ group.add(cube24);
 group.add(cube25);
 group.add(cube26);
 group.add(cube27);
+*/
 
-camera.position.z = 7.5;
+/*
+const cube1 = new THREE.Mesh(geometry, material)
+cube1.position.set(-1, 0, 0)
+cube1.add(edges)
 
-function animate() {
-  scene.add(group)
-	renderer.render(scene, camera);
-}
-animate();
+const cube2 = new THREE.Mesh(geometry, material)
+cube2.position.set(0, 0, 0)
+cube2.add(edges)
+
+const cube3 = new THREE.Mesh(geometry, material)
+cube3.position.set(1, 0, 0)
+cube3.add(edges)
+
+const cube4 = new THREE.Mesh(geometry, material)
+cube4.position.set(-1, 1, 0)
+cube4.add(edges)
+
+const cube5 = new THREE.Mesh(geometry, material)
+cube5.position.set(0, 1, 0)
+cube5.add(edges)
+
+const cube6 = new THREE.Mesh(geometry, material)
+cube6.position.set(1, 1, 0)
+cube6.add(edges)
+
+const cube7 = new THREE.Mesh(geometry, material)
+cube7.position.set(-1, -1, 0)
+cube7.add(edges)
+
+const cube8 = new THREE.Mesh(geometry, material)
+cube8.position.set(0, -1, 0)
+cube8.add(edges)
+
+const cube9 = new THREE.Mesh(geometry, material)
+cube9.position.set(1, -1, 0)
+cube9.add(edges)
+
+const cube10 = new THREE.Mesh(geometry, material)
+cube10.position.set(-1, 0, 1)
+cube10.add(edges)
+
+const cube11 = new THREE.Mesh(geometry, material)
+cube11.position.set(0, 0, 1)
+cube1.add(edges)
+
+const cube12 = new THREE.Mesh(geometry, material)
+cube12.position.set(1, 0, 1)
+cube1.add(edges)
+
+const cube13 = new THREE.Mesh(geometry, material)
+cube13.position.set(-1, 1, 1)
+cube1.add(edges)
+
+const cube14 = new THREE.Mesh(geometry, material)
+cube14.position.set(0, 1, 1)
+cube1.add(edges)
+
+const cube15 = new THREE.Mesh(geometry, material)
+cube15.position.set(1, 1, 1)
+cube1.add(edges)
+
+const cube16 = new THREE.Mesh(geometry, material)
+cube16.position.set(-1, -1, 1)
+cube1.add(edges)
+
+const cube17 = new THREE.Mesh(geometry, material)
+cube17.position.set(0, -1, 1)
+cube1.add(edges)
+
+const cube18 = new THREE.Mesh(geometry, material)
+cube18.position.set(1, -1, 1)
+cube1.add(edges)
+
+const cube19 = new THREE.Mesh(geometry, material)
+cube19.position.set(-1, 0, -1)
+cube1.add(edges)
+
+const cube20 = new THREE.Mesh(geometry, material)
+cube20.position.set(0, 0, -1)
+cube1.add(edges)
+
+const cube21 = new THREE.Mesh(geometry, material)
+cube21.position.set(1, 0, -1)
+cube1.add(edges)
+
+const cube22 = new THREE.Mesh(geometry, material)
+cube22.position.set(-1, 1, -1)
+cube1.add(edges)
+
+const cube23 = new THREE.Mesh(geometry, material)
+cube23.position.set(0, 1, -1)
+cube1.add(edges)
+
+const cube24 = new THREE.Mesh(geometry, material)
+cube24.position.set(1, 1, -1)
+cube1.add(edges)
+
+const cube25 = new THREE.Mesh(geometry, material)
+cube25.position.set(-1, -1, -1)
+cube1.add(edges)
+
+const cube26 = new THREE.Mesh(geometry, material)
+cube26.position.set(0, -1, -1)
+cube1.add(edges)
+
+const cube27 = new THREE.Mesh(geometry, material)
+cube27.position.set(1, -1, -1)
+cube1.add(edges)
+*/ 
