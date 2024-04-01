@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import * as TWEEN from '@tweenjs/tween.js'
 
 const width = window.innerWidth - 20
 const height = window.innerHeight - 20
@@ -110,14 +111,18 @@ window.addEventListener('mousemove', event => {
   console.log("dragged", dragged);
 })
 
-/*const xAxis = new THREE.Vector3(1, 0, 0)
-const yAxis = new THREE.Vector3(0, 0, 1)*/
+/*
+const xAxis = new THREE.Vector3(1, 0, 0)
+const yAxis = new THREE.Vector3(0, 0, 1)
+*/
 
 const axesHelper = new THREE.AxesHelper(5);
 scene.add(axesHelper);
 
+/*
 const quaternion = new THREE.Quaternion();
 const degree = Math.PI / 2
+*/
 
 function dragObject() {
   if (draggable != null) {
@@ -142,13 +147,21 @@ function dragObject() {
           group.add(cube)
         }
         scene.add(group)
+
+        let targetRotation = Math.PI;
         if (initialClick.x - dragged.x < 0)
-          group.rotation.x = -target.x
+          rotateGroup(group, -targetRotation)
         else 
-          group.rotation.x = target.x
+          rotateGroup(group, targetRotation);
       }
     }
   }
+}
+
+function rotateGroup(group: THREE.Group<THREE.Object3DEventMap>, targetRotation: number) {
+  new TWEEN.Tween(group.rotation)
+    .to({ x: targetRotation }, 4000)
+    .start()
 }
 
 /*
@@ -161,6 +174,7 @@ camera.position.z = 7.5;
 function animate() {
   requestAnimationFrame(animate);
   dragObject()
+  TWEEN.update()
 	renderer.render(scene, camera);
 }
 animate();
