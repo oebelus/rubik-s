@@ -134,7 +134,7 @@ function dragObject() {
           continue
         }
 
-        let target = sect.point
+        //let target = sect.point
 
         const toRotate: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = []
         for (var cube of cubes) {
