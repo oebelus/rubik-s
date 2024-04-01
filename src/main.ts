@@ -151,10 +151,10 @@ function dragObject() {
   }
 }
 
-
+/*
 const axis = new THREE.Vector3(0, 1, 1)
-
 quaternion.setFromAxisAngle(axis.normalize(), THREE.MathUtils.degToRad(degree));
+*/
 
 camera.position.z = 7.5;
 
