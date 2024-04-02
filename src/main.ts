@@ -46,22 +46,22 @@ for (let i = 0; i < positionAttribute.count; i+=6) {
 
 geometry.setAttribute('color', new THREE.Float32BufferAttribute(threeColors, 3))
 
-const cubes: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = []
+const cubes: THREE.LineSegments<THREE.EdgesGeometry<THREE.BufferGeometry<THREE.NormalBufferAttributes>>, THREE.LineBasicMaterial, THREE.Object3DEventMap>[] = []
 
 const cubesNumber = 3
 const start = -cubesNumber % 2
 for (let i = start; i < cubesNumber-1; i+=1) {
   for (let j = start; j < cubesNumber-1; j+=1) {
     for (let k = start; k < cubesNumber-1; k+=1) {
-      //const edges = new THREE.EdgesGeometry(geometry); 
-      //const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({color: 0x000000, linewidth: 10})); 
+      const edges = new THREE.EdgesGeometry(geometry); 
+      const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({color: 0x000000, linewidth: 10})); 
       const cube = new THREE.Mesh(geometry, material)
-      /*line.material.linewidth = 10
-      line.add(cube)*/
-      cube.userData.draggable = true
-      cube.userData.name = `Cube: ${i}, ${j}, ${k}`
-      cube.position.set(i, j, k)
-      cubes.push(cube)
+      line.material.linewidth = 10
+      line.add(cube)
+      line.userData.draggable = true
+      line.userData.name = `Cube: ${i}, ${j}, ${k}`
+      line.position.set(i, j, k)
+      cubes.push(line)
     }
   }
 }
@@ -78,11 +78,12 @@ var draggable: THREE.Object3D | null
 let clicked = false
 
 window.addEventListener('click', event => {
-  /*if (draggable) {
+  if (draggable) {
     console.log(`Dropping draggable: ${draggable.userData.name}`)
     draggable = null as any
+    clicked = false
     return 
-  }*/
+  }
   clicked = true
   var mouseVector = new THREE.Vector2(
     event.clientX / window.innerWidth * 2 - 1,
@@ -112,18 +113,8 @@ window.addEventListener('mousemove', event => {
   }
 })
 
-/*
-const xAxis = new THREE.Vector3(1, 0, 0)
-const yAxis = new THREE.Vector3(0, 0, 1)
-*/
-
 const axesHelper = new THREE.AxesHelper(5);
 scene.add(axesHelper);
-
-/*
-const quaternion = new THREE.Quaternion();
-const degree = Math.PI / 2
-*/
 
 function dragObject() {
   if (draggable != null) {
@@ -135,39 +126,50 @@ function dragObject() {
           continue
         }
 
-        const toRotate: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.x == draggable!.position.x);
-        const toRotateGroup = new THREE.Group()
+        const xOffset = initialClick.x - dragged.x
+        const yOffset = initialClick.y - dragged.y
 
-        for (let cube of toRotate) {
-          toRotateGroup.add(cube)
-        }
-        scene.add(toRotateGroup)
+        const xAxis = new THREE.Vector3(1, 0, 0)
+        const yAxis = new THREE.Vector3(0, 1, 0)
+
+        const toRotateX: THREE.LineSegments<THREE.EdgesGeometry<THREE.BufferGeometry<THREE.NormalBufferAttributes>>, THREE.LineBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.x == draggable!.position.x);
+        const toRotateY: THREE.LineSegments<THREE.EdgesGeometry<THREE.BufferGeometry<THREE.NormalBufferAttributes>>, THREE.LineBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.y == draggable!.position.y);
         
-        let targetRotation = Math.PI / 2;
-        if (initialClick.x - dragged.x < 0)
-          rotateGroup(toRotateGroup, -targetRotation)
-        else 
-          rotateGroup(toRotateGroup, targetRotation);
+        if (Math.abs(xOffset) > Math.abs(yOffset)) {
+          if (toRotateX.length == 9)
+            for (let cube of toRotateX) {
+              if (xOffset < 0)
+                rotateCube(cube, -Math.PI / 2, xAxis);
+              else 
+                rotateCube(cube, Math.PI / 2, xAxis);
+              }
+            }
+        else {
+          if (toRotateY.length == 9)
+            for (let cube of toRotateY) {
+              if (yOffset < 0)
+                rotateCube(cube, -Math.PI / 2, yAxis);
+              else 
+                rotateCube(cube, Math.PI / 2, yAxis);
+            }
+        }
       }
     }
   }
 }
 
-function rotateGroup(group: THREE.Group<THREE.Object3DEventMap>, targetRotation: number) {
-  new TWEEN.Tween(group.rotation)
-    .to({x: targetRotation }, 4000)
+function rotateCube(cube: THREE.LineSegments<THREE.EdgesGeometry<THREE.BufferGeometry<THREE.NormalBufferAttributes>>, THREE.LineBasicMaterial, THREE.Object3DEventMap>, targetRotation: number, axis: THREE.Vector3) {
+  const quaternion = new THREE.Quaternion().setFromAxisAngle(axis.normalize(), targetRotation);
+
+  new TWEEN.Tween(cube.quaternion)
+    .to(quaternion, 1000)
     .start();
 }
 
 window.addEventListener('mouseup', () => {
   clicked = false
-  draggable = null; // Stop dragging when mouse is released
+  draggable = null; 
 })
-
-/*
-const axis = new THREE.Vector3(0, 1, 1)
-quaternion.setFromAxisAngle(axis.normalize(), THREE.MathUtils.degToRad(degree));
-*/
 
 camera.position.z = 7.5;
 
