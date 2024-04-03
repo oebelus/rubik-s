@@ -58,7 +58,8 @@ for (let i = start; i < cubesNumber-1; i+=1) {
       line.material.linewidth = 10
       line.add(cube)
       line.userData.draggable = true
-      line.userData.name = `Cube: ${i}, ${j}, ${k}`
+      cube.userData.draggable = true
+      line.userData.name = `Line: ${i}, ${j}, ${k}`
       line.position.set(i, j, k)
       cubes.push(line)
     }
@@ -68,51 +69,54 @@ for (let i = start; i < cubesNumber-1; i+=1) {
 for (var cube of cubes)
   scene.add(cube)
 
+for (var element of scene.children) {
+  element.userData.draggable = true
+}
+
 const raycaster = new THREE.Raycaster()
 
 let initialClick = new THREE.Vector2()
 let dragged = new THREE.Vector2()
 
-var draggable: THREE.Object3D | null
+var draggable: THREE.Object3D | null = null
 let clicked = false
 
 window.addEventListener('click', event => {
   clicked = true
+
   var mouseVector = new THREE.Vector2(
     event.clientX / window.innerWidth * 2 - 1,
     -event.clientY / window.innerHeight * 2 + 1
   );
-
   initialClick = mouseVector.copy(mouseVector);
 
   raycaster.setFromCamera(mouseVector, camera)
   const intersects = raycaster.intersectObjects(scene.children)
-
+    console.log(intersects, intersects[0].object.userData)
   if (intersects.length > 0 && intersects[0].object.userData.draggable) {
-    console.log(intersects[0].object.position)
     draggable = intersects[0].object
   }
 })
 
 let mouseVector = new THREE.Vector2()
 
-window.addEventListener('mousemove', event => {
-  if (clicked) {
-    mouseVector = new THREE.Vector2(
-      event.clientX / window.innerWidth * 2 - 1,
-      -event.clientY / window.innerHeight * 2 + 1
-    );
-    dragged = mouseVector.copy(mouseVector);
-  }
+window.addEventListener('mousemove', (event) => {
+  mouseVector = new THREE.Vector2(
+    event.clientX / window.innerWidth * 2 - 1,
+    -event.clientY / window.innerHeight * 2 + 1
+  );
+  dragged = mouseVector.copy(mouseVector);
+  dragObject()
+  clicked = false
+  draggable = null; 
 })
 
-const axesHelper = new THREE.AxesHelper(5);
-scene.add(axesHelper);
+// const axesHelper = new THREE.AxesHelper(5);
+// scene.add(axesHelper);
 
 function dragObject() {
-  console.log("clicked", clicked)
-  if (draggable != null && clicked) {
-    console.log("clicked", clicked)
+  if (draggable != null) {
+
     raycaster.setFromCamera(mouseVector, camera)
     const intersect = raycaster.intersectObjects(scene.children)
     if (intersect.length > 0) {
@@ -120,10 +124,14 @@ function dragObject() {
         if (!sect.object.userData.draggable) {
           continue
         }
-        console.log("first", draggable.position)
 
-        const xOffset = initialClick.x - dragged.x
-        const yOffset = initialClick.y - dragged.y
+        const xOffset = draggable.position.x - initialClick.x;
+        const xDirection = draggable.position.x + initialClick.x
+
+        const yOffset = draggable.position.y - initialClick.y;
+        const yDirection = draggable.position.y + initialClick.y
+
+        console.log("offset", xOffset, yOffset, xOffset > yOffset ? "x > y" : "x < y")
 
         const xAxis = new THREE.Vector3(1, 0, 0)
         const yAxis = new THREE.Vector3(0, 1, 0)
@@ -137,8 +145,8 @@ function dragObject() {
         if (Math.abs(xOffset) > Math.abs(yOffset)) {
             for (var cube of toRotateX) {
               toRotateGroup.add(cube)
-              if (toRotateX.length == 9 && xOffset != 0)
-              if (xOffset < 0)
+              if (toRotateX.length == 9 && yOffset != 0)
+              if (yOffset < 0)
               rotateGroup(toRotateGroup, targetRotation*-1, xAxis)
             else
               rotateGroup(toRotateGroup, targetRotation, xAxis)
@@ -146,11 +154,11 @@ function dragObject() {
         } else {
             for (var cube of toRotateY) {
               toRotateGroup.add(cube)
-              if (toRotateY.length == 9 && yOffset != 0)
+              if (toRotateY.length == 9 && xOffset != 0)
             
-            if (yOffset < 0)
+            if (xOffset > 0)
               rotateGroup(toRotateGroup, -targetRotation, yAxis)
-            else if (yOffset > 0)
+            else
               rotateGroup(toRotateGroup, targetRotation, yAxis)
           }
         }
@@ -192,17 +200,10 @@ function rotateGroup(group: THREE.Group<THREE.Object3DEventMap>, targetRotation:
     .start();
 }
 
-window.addEventListener('mouseup', () => {
-  clicked = false
-  draggable = null; 
-})
-
 camera.position.z = 7.5;
 
 function animate() {
   requestAnimationFrame(animate);
-  console.log("clicked", clicked)
-  dragObject()
   TWEEN.update()
 	renderer.render(scene, camera);
 }
