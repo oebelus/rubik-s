@@ -2,8 +2,8 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as TWEEN from '@tweenjs/tween.js'
 
-const width = window.innerWidth - 20
-const height = window.innerHeight - 20
+const width = window.innerWidth
+const height = window.innerHeight
 
 const scene = new THREE.Scene()
 const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000)
@@ -12,7 +12,6 @@ const renderer = new THREE.WebGLRenderer({
   antialias: true,
 })
 renderer.setSize(width, height, false)
-renderer.setAnimationLoop(animate)
 document.body.appendChild(renderer.domElement)
 
 let controls = new OrbitControls(camera, renderer.domElement);
@@ -78,12 +77,6 @@ var draggable: THREE.Object3D | null
 let clicked = false
 
 window.addEventListener('click', event => {
-  if (draggable) {
-    console.log(`Dropping draggable: ${draggable.userData.name}`)
-    draggable = null as any
-    clicked = false
-    return 
-  }
   clicked = true
   var mouseVector = new THREE.Vector2(
     event.clientX / window.innerWidth * 2 - 1,
@@ -117,7 +110,9 @@ const axesHelper = new THREE.AxesHelper(5);
 scene.add(axesHelper);
 
 function dragObject() {
-  if (draggable != null) {
+  console.log("clicked", clicked)
+  if (draggable != null && clicked) {
+    console.log("clicked", clicked)
     raycaster.setFromCamera(mouseVector, camera)
     const intersect = raycaster.intersectObjects(scene.children)
     if (intersect.length > 0) {
@@ -125,6 +120,7 @@ function dragObject() {
         if (!sect.object.userData.draggable) {
           continue
         }
+        console.log("first", draggable.position)
 
         const xOffset = initialClick.x - dragged.x
         const yOffset = initialClick.y - dragged.y
@@ -135,34 +131,64 @@ function dragObject() {
         const toRotateX: THREE.LineSegments<THREE.EdgesGeometry<THREE.BufferGeometry<THREE.NormalBufferAttributes>>, THREE.LineBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.x == draggable!.position.x);
         const toRotateY: THREE.LineSegments<THREE.EdgesGeometry<THREE.BufferGeometry<THREE.NormalBufferAttributes>>, THREE.LineBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.y == draggable!.position.y);
         
+        const toRotateGroup = new THREE.Group()
+        let targetRotation = Math.PI / 2;
+        
         if (Math.abs(xOffset) > Math.abs(yOffset)) {
-          if (toRotateX.length == 9)
-            for (let cube of toRotateX) {
+            for (var cube of toRotateX) {
+              toRotateGroup.add(cube)
+              if (toRotateX.length == 9 && xOffset != 0)
               if (xOffset < 0)
-                rotateCube(cube, -Math.PI / 2, xAxis);
-              else 
-                rotateCube(cube, Math.PI / 2, xAxis);
-              }
+              rotateGroup(toRotateGroup, targetRotation*-1, xAxis)
+            else
+              rotateGroup(toRotateGroup, targetRotation, xAxis)
             }
-        else {
-          if (toRotateY.length == 9)
-            for (let cube of toRotateY) {
-              if (yOffset < 0)
-                rotateCube(cube, -Math.PI / 2, yAxis);
-              else 
-                rotateCube(cube, Math.PI / 2, yAxis);
-            }
+        } else {
+            for (var cube of toRotateY) {
+              toRotateGroup.add(cube)
+              if (toRotateY.length == 9 && yOffset != 0)
+            
+            if (yOffset < 0)
+              rotateGroup(toRotateGroup, -targetRotation, yAxis)
+            else if (yOffset > 0)
+              rotateGroup(toRotateGroup, targetRotation, yAxis)
+          }
         }
+        scene.add(toRotateGroup)
+        
+        clicked = false
       }
+
     }
   }
 }
 
-function rotateCube(cube: THREE.LineSegments<THREE.EdgesGeometry<THREE.BufferGeometry<THREE.NormalBufferAttributes>>, THREE.LineBasicMaterial, THREE.Object3DEventMap>, targetRotation: number, axis: THREE.Vector3) {
+function clearGroup(direction: 'x' | 'y', group: THREE.Group<THREE.Object3DEventMap>) {
+  for (var i = group.children.length - 1; i >= 0; i--) {
+    let item = group.children[i];
+    item.getWorldPosition(item.position);
+    item.getWorldQuaternion(item.quaternion);
+    item.position.x = Math.round(item.position.x);
+    item.position.y = Math.round(item.position.y);
+    item.position.z = Math.round(item.position.z);
+    group.remove(item);
+    scene.add(item);
+  }
+  if (direction === 'x') {
+    group.rotation.x = 0;
+  } else if (direction === 'y') {
+    group.rotation.y = 0;
+  }
+}
+
+function rotateGroup(group: THREE.Group<THREE.Object3DEventMap>, targetRotation: number, axis: THREE.Vector3) {
   const quaternion = new THREE.Quaternion().setFromAxisAngle(axis.normalize(), targetRotation);
 
-  new TWEEN.Tween(cube.quaternion)
+  new TWEEN.Tween(group.quaternion)
     .to(quaternion, 1000)
+    .onComplete(() => {
+      clearGroup(new THREE.Vector3(1, 0, 0) ? 'x' : 'y', group)
+    })
     .start();
 }
 
@@ -175,6 +201,7 @@ camera.position.z = 7.5;
 
 function animate() {
   requestAnimationFrame(animate);
+  console.log("clicked", clicked)
   dragObject()
   TWEEN.update()
 	renderer.render(scene, camera);
