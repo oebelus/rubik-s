@@ -99,20 +99,41 @@ window.addEventListener('click', event => {
 })
 
 let mouseVector = new THREE.Vector2()
+let direction = ""
+let horizontal = false
 
 window.addEventListener('mousemove', (event) => {
   mouseVector = new THREE.Vector2(
     event.clientX / window.innerWidth * 2 - 1,
     -event.clientY / window.innerHeight * 2 + 1
   );
+
+  if (clicked) {
+  let oldX = 0
+  let oldY = 0
+  if (Math.abs(event.movementX) > Math.abs(event.movementY)) {
+    horizontal = true
+    if (event.movementX < oldX) direction = "left"
+    else if (event.movementX > oldX) direction = "right"
+  } else {
+    horizontal = false
+    if (event.movementY < oldY) direction = "top"
+    else if (event.movementY > oldY) direction = "bottom"
+  }
+  oldX = event.movementX
+  oldY = event.movementY
+}
+
+  console.log(direction)
   dragged = mouseVector.copy(mouseVector);
   dragObject()
   clicked = false
   draggable = null; 
 })
 
-// const axesHelper = new THREE.AxesHelper(5);
-// scene.add(axesHelper);
+const axesHelper = new THREE.AxesHelper(5);
+scene.add(axesHelper);
+
 
 function dragObject() {
   if (draggable != null) {
@@ -142,24 +163,24 @@ function dragObject() {
         const toRotateGroup = new THREE.Group()
         let targetRotation = Math.PI / 2;
         
-        if (Math.abs(xOffset) > Math.abs(yOffset)) {
-            for (var cube of toRotateX) {
-              toRotateGroup.add(cube)
-              if (toRotateX.length == 9 && yOffset != 0)
-              if (yOffset < 0)
-              rotateGroup(toRotateGroup, targetRotation*-1, xAxis)
-            else
-              rotateGroup(toRotateGroup, targetRotation, xAxis)
-            }
-        } else {
+        if (horizontal) {
             for (var cube of toRotateY) {
               toRotateGroup.add(cube)
-              if (toRotateY.length == 9 && xOffset != 0)
-            
-            if (xOffset > 0)
-              rotateGroup(toRotateGroup, -targetRotation, yAxis)
-            else
+              if (toRotateY.length == 9)
+              if (direction == "right")
               rotateGroup(toRotateGroup, targetRotation, yAxis)
+            else if (direction == "left")
+              rotateGroup(toRotateGroup, targetRotation*-1, yAxis)
+            }
+        } else if (!horizontal) {
+            for (var cube of toRotateX) {
+              toRotateGroup.add(cube)
+              if (toRotateX.length == 9)
+            
+            if (direction == 'top')
+              rotateGroup(toRotateGroup, -targetRotation, xAxis)
+            else if (direction == "bottom")
+              rotateGroup(toRotateGroup, targetRotation, xAxis)
           }
         }
         scene.add(toRotateGroup)
