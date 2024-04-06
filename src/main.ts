@@ -75,9 +75,6 @@ for (var element of scene.children) {
 
 const raycaster = new THREE.Raycaster()
 
-let initialClick = new THREE.Vector2()
-let dragged = new THREE.Vector2()
-
 var draggable: THREE.Object3D | null = null
 let clicked = false
 
@@ -88,13 +85,18 @@ window.addEventListener('click', event => {
     event.clientX / window.innerWidth * 2 - 1,
     -event.clientY / window.innerHeight * 2 + 1
   );
-  initialClick = mouseVector.copy(mouseVector);
 
   raycaster.setFromCamera(mouseVector, camera)
   const intersects = raycaster.intersectObjects(scene.children)
-    console.log(intersects, intersects[0].object.userData)
-  if (intersects.length > 0 && intersects[0].object.userData.draggable) {
-    draggable = intersects[0].object
+
+  for (let i = 0; i < intersects.length; i++) {
+    const intersect = intersects[i];
+    const object = intersect.object;
+
+    if (object.userData.draggable) {
+      draggable = object;
+      break;
+    }
   }
 })
 
@@ -125,7 +127,6 @@ window.addEventListener('mousemove', (event) => {
 }
 
   console.log(direction)
-  dragged = mouseVector.copy(mouseVector);
   dragObject()
   clicked = false
   draggable = null; 
@@ -140,26 +141,20 @@ function dragObject() {
 
     raycaster.setFromCamera(mouseVector, camera)
     const intersect = raycaster.intersectObjects(scene.children)
+      
     if (intersect.length > 0) {
       for (let sect of intersect) {
+        //console.log("count", sect)
         if (!sect.object.userData.draggable) {
           continue
         }
-
-        const xOffset = draggable.position.x - initialClick.x;
-        const xDirection = draggable.position.x + initialClick.x
-
-        const yOffset = draggable.position.y - initialClick.y;
-        const yDirection = draggable.position.y + initialClick.y
-
-        console.log("offset", xOffset, yOffset, xOffset > yOffset ? "x > y" : "x < y")
 
         const xAxis = new THREE.Vector3(1, 0, 0)
         const yAxis = new THREE.Vector3(0, 1, 0)
 
         const toRotateX: THREE.LineSegments<THREE.EdgesGeometry<THREE.BufferGeometry<THREE.NormalBufferAttributes>>, THREE.LineBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.x == draggable!.position.x);
         const toRotateY: THREE.LineSegments<THREE.EdgesGeometry<THREE.BufferGeometry<THREE.NormalBufferAttributes>>, THREE.LineBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.y == draggable!.position.y);
-        
+        console.log("to rotate x", toRotateX)
         const toRotateGroup = new THREE.Group()
         let targetRotation = Math.PI / 2;
         
@@ -211,12 +206,14 @@ function clearGroup(direction: 'x' | 'y', group: THREE.Group<THREE.Object3DEvent
 }
 
 function rotateGroup(group: THREE.Group<THREE.Object3DEventMap>, targetRotation: number, axis: THREE.Vector3) {
+  clicked = false
   const quaternion = new THREE.Quaternion().setFromAxisAngle(axis.normalize(), targetRotation);
-
+  
   new TWEEN.Tween(group.quaternion)
-    .to(quaternion, 1000)
+    .to(quaternion, 400)
     .onComplete(() => {
       clearGroup(new THREE.Vector3(1, 0, 0) ? 'x' : 'y', group)
+      clicked = true
     })
     .start();
 }
