@@ -45,7 +45,7 @@ for (let i = 0; i < positionAttribute.count; i+=6) {
 
 geometry.setAttribute('color', new THREE.Float32BufferAttribute(threeColors, 3))
 
-const cubes: THREE.LineSegments<THREE.EdgesGeometry<THREE.BufferGeometry<THREE.NormalBufferAttributes>>, THREE.LineBasicMaterial, THREE.Object3DEventMap>[] = []
+const cubes: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = []
 
 const cubesNumber = 3
 const start = -cubesNumber % 2
@@ -57,11 +57,11 @@ for (let i = start; i < cubesNumber-1; i+=1) {
       const cube = new THREE.Mesh(geometry, material)
       line.material.linewidth = 10
       line.add(cube)
-      line.userData.draggable = true
+      //line.userData.draggable = true
       cube.userData.draggable = true
       line.userData.name = `Line: ${i}, ${j}, ${k}`
-      line.position.set(i, j, k)
-      cubes.push(line)
+      cube.position.set(i, j, k)
+      cubes.push(cube)
     }
   }
 }
@@ -69,36 +69,34 @@ for (let i = start; i < cubesNumber-1; i+=1) {
 for (var cube of cubes)
   scene.add(cube)
 
-for (var element of scene.children) {
-  element.userData.draggable = true
-}
-
 const raycaster = new THREE.Raycaster()
 
 var draggable: THREE.Object3D | null = null
 let clicked = false
 
 window.addEventListener('click', event => {
-  clicked = true
+  clicked = true;
 
-  var mouseVector = new THREE.Vector2(
-    event.clientX / window.innerWidth * 2 - 1,
-    -event.clientY / window.innerHeight * 2 + 1
+  const mouseVector = new THREE.Vector2(
+    (event.clientX / window.innerWidth) * 2 - 1,
+    -(event.clientY / window.innerHeight) * 2 + 1
   );
 
-  raycaster.setFromCamera(mouseVector, camera)
-  const intersects = raycaster.intersectObjects(scene.children)
+  raycaster.setFromCamera(mouseVector, camera);
 
-  for (let i = 0; i < intersects.length; i++) {
-    const intersect = intersects[i];
-    const object = intersect.object;
-
-    if (object.userData.draggable) {
-      draggable = object;
-      break;
-    }
+  const intersects = raycaster.intersectObjects(scene.children);
+  
+  if ( intersects.length > 0 ) {            
+    for (var sect of intersects) {
+      if (sect.object.userData.draggable) {
+        draggable = sect.object
+        console.log("position: ", draggable.position)
+      //console.log("point", sect.point)
+      break
+      }
   }
-})
+}
+});
 
 let mouseVector = new THREE.Vector2()
 let direction = ""
@@ -132,10 +130,6 @@ window.addEventListener('mousemove', (event) => {
   draggable = null; 
 })
 
-const axesHelper = new THREE.AxesHelper(5);
-scene.add(axesHelper);
-
-
 function dragObject() {
   if (draggable != null) {
 
@@ -144,45 +138,98 @@ function dragObject() {
       
     if (intersect.length > 0) {
       for (let sect of intersect) {
-        //console.log("count", sect)
         if (!sect.object.userData.draggable) {
           continue
         }
 
         const xAxis = new THREE.Vector3(1, 0, 0)
         const yAxis = new THREE.Vector3(0, 1, 0)
+        const zAxis = new THREE.Vector3(0, 0, 1)
 
-        const toRotateX: THREE.LineSegments<THREE.EdgesGeometry<THREE.BufferGeometry<THREE.NormalBufferAttributes>>, THREE.LineBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.x == draggable!.position.x);
-        const toRotateY: THREE.LineSegments<THREE.EdgesGeometry<THREE.BufferGeometry<THREE.NormalBufferAttributes>>, THREE.LineBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.y == draggable!.position.y);
-        console.log("to rotate x", toRotateX)
+        const toRotateX: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.x == draggable!.position.x);
+        const toRotateY: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.y == draggable!.position.y);
+        const toRotateZ: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.z == draggable!.position.z);
+
+        const front: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.z == 1)
+        const back: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.z == -1)
+        const left: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.x == -1)
+        const right: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.x == 1)
+        const bottom: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.y == -1)
+        const top: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.z == 1)
+        const center: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.z == 0)
+
         const toRotateGroup = new THREE.Group()
+
         let targetRotation = Math.PI / 2;
-        
+
+        /*
+        else if (draggable.position.x == -1 && draggable.position.z == 0) {
+          for (var cube of center) {
+            bufferGroup.add(cube)
+          }
+          rotateGroup(bufferGroup, -targetRotation, zAxis)
+        }*/
         if (horizontal) {
             for (var cube of toRotateY) {
               toRotateGroup.add(cube)
+              console.log(cube.position)
               if (toRotateY.length == 9)
               if (direction == "right")
               rotateGroup(toRotateGroup, targetRotation, yAxis)
             else if (direction == "left")
+             
               rotateGroup(toRotateGroup, targetRotation*-1, yAxis)
             }
         } else if (!horizontal) {
-            for (var cube of toRotateX) {
-              toRotateGroup.add(cube)
+            
               if (toRotateX.length == 9)
             
-            if (direction == 'top')
-              rotateGroup(toRotateGroup, -targetRotation, xAxis)
+              if (direction == 'top')
+                if (draggable.position.x == -1) {
+                  if (draggable.position.z == 1) 
+                    for (var cube of front) 
+                      toRotateGroup.add(cube)
+                    
+                  else if (draggable.position.z == 0) 
+                    for (var cube of center) 
+                      toRotateGroup.add(cube)
+
+                  else if (draggable.position.z == -1) 
+                    for (var cube of back) 
+                      toRotateGroup.add(cube)
+                  
+                  rotateGroup(toRotateGroup, -targetRotation, zAxis)
+                } else {
+                  for (var cube of toRotateX)
+                    toRotateGroup.add(cube)
+                  rotateGroup(toRotateGroup, -targetRotation*draggable.position.z, xAxis)
+                }
+              
             else if (direction == "bottom")
-              rotateGroup(toRotateGroup, targetRotation, xAxis)
+              if (draggable.position.x == -1) {
+                if (draggable.position.z == 1) 
+                  for (var cube of front) 
+                    toRotateGroup.add(cube)
+                  
+                else if (draggable.position.z == 0) 
+                  for (var cube of center) 
+                    toRotateGroup.add(cube)
+
+                else if (draggable.position.z == -1) 
+                  for (var cube of back) 
+                    toRotateGroup.add(cube)
+                
+                rotateGroup(toRotateGroup, targetRotation, zAxis)
+              } else {
+                for (var cube of toRotateX)
+                  toRotateGroup.add(cube)
+                rotateGroup(toRotateGroup, targetRotation*draggable.position.z, xAxis)
+              }
           }
-        }
         scene.add(toRotateGroup)
         
         clicked = false
       }
-
     }
   }
 }
@@ -226,3 +273,44 @@ function animate() {
 	renderer.render(scene, camera);
 }
 animate();
+
+/*
+
+x = -1 => LEFT 
+z = 1 => FRONT
+x = 1 => RIGHT
+z = -1 => BACK
+y = 1 => TOP
+y = -1 => BOTTOM
+
+Object { x: -1, y: -1, z: -1 } LEFT BACK
+Object { x: -1, y: -1, z: 0 } LEFT
+Object { x: -1, y: -1, z: 1 } FRONT LEFT
+Object { x: -1, y: 0, z: -1 } LEFT BACK
+Object { x: -1, y: 0, z: 0 } LEFT
+Object { x: -1, y: 0, z: 1 } FRONT LEFT
+Object { x: -1, y: 1, z: -1 } LEFT BACK
+Object { x: -1, y: 1, z: 0 } LEFT
+Object { x: -1, y: 1, z: 1 } FRONT LEFT
+
+Object { x: 0, y: -1, z: -1 } BACK
+Object { x: 0, y: -1, z: 0 }
+Object { x: 0, y: -1, z: 1 } FRONT
+Object { x: 0, y: 0, z: -1 } BACK
+Object { x: 0, y: 0, z: 0 }
+Object { x: 0, y: 0, z: 1 } FRONT
+Object { x: 0, y: 1, z: -1 } BACK
+Object { x: 0, y: 1, z: 0 }
+Object { x: 0, y: 1, z: 1 } FRONT
+
+Object { x: 1, y: -1, z: -1 } RIGHT BACK
+Object { x: 1, y: -1, z: 0 } RIGHT
+Object { x: 1, y: -1, z: 1 } FRONT RIGHT
+Object { x: 1, y: 0, z: -1 } RIGHT BACK
+Object { x: 1, y: 0, z: 0 } RIGHT
+Object { x: 1, y: 0, z: 1 } FRONT
+Object { x: 1, y: 1, z: -1 } RIGHT BACK
+Object { x: 1, y: 1, z: 0 } RIGHT
+Object { x: 1, y: 1, z: 1 } FRONT RIGHT
+
+*/
