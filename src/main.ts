@@ -19,12 +19,14 @@ controls.enableDamping = true;
 controls.enableZoom = false;
 
 const geometry = new THREE.BoxGeometry(1, 1, 1).toNonIndexed()
+
 const material = new THREE.MeshBasicMaterial({
   vertexColors: true,
-  side: THREE.DoubleSide
+  side: THREE.DoubleSide,
 })
 
 const positionAttribute = geometry.getAttribute("position")
+
 const colors = [0xb71b1b, 0x201b9b, 0xffffff, 0xe0dc12, 0xf16916, 0x0ba334]
 const threeColors = []
 const color = new THREE.Color()
@@ -69,7 +71,26 @@ for (let i = start; i < cubesNumber-1; i+=1) {
 for (var cube of cubes)
   scene.add(cube)
 
+for (var cube of cubes) {
+  const faceNormals = geometry.attributes.normal.array;
+  for (let i = 0; i < faceNormals.length; i += 12) { // Adjust increment based on vertex count per face
+    const normalX = faceNormals[i];
+    const normalY = faceNormals[i + 1];
+    const normalZ = faceNormals[i + 2];
+  
+    // Calculate a representative face direction based on the normal
+    const faceDirection = new THREE.Vector3(normalX, normalY, normalZ);
+    faceDirection.normalize();
+  
+    console.log("Face Direction:", faceDirection);
+  }
+}
+
+const axesHelper = new THREE.AxesHelper( 5 );
+scene.add( axesHelper );
+
 const raycaster = new THREE.Raycaster()
+let position: THREE.Vector3 = new THREE.Vector3(0, 0, 0)
 
 var draggable: THREE.Object3D | null = null
 let clicked = false
@@ -90,17 +111,21 @@ window.addEventListener('click', event => {
     for (var sect of intersects) {
       if (sect.object.userData.draggable) {
         draggable = sect.object
-        console.log("position: ", draggable.position)
-      //console.log("point", sect.point)
+        position = sect.object.position
+        console.log("index", position)
+        console.log("position", sect.object.position)
       break
       }
   }
-}
+  }
 });
 
 let mouseVector = new THREE.Vector2()
 let direction = ""
 let horizontal = false
+
+let oldX = 0
+let oldY = 0
 
 window.addEventListener('mousemove', (event) => {
   mouseVector = new THREE.Vector2(
@@ -109,8 +134,7 @@ window.addEventListener('mousemove', (event) => {
   );
 
   if (clicked) {
-  let oldX = 0
-  let oldY = 0
+  
   if (Math.abs(event.movementX) > Math.abs(event.movementY)) {
     horizontal = true
     if (event.movementX < oldX) direction = "left"
@@ -132,6 +156,22 @@ window.addEventListener('mousemove', (event) => {
 
 function dragObject() {
   if (draggable != null) {
+    let plus = 0
+    let minus = 0
+
+    for (cube of cubes) {
+      if (cube.position.x == draggable.position.x - 1 && cube.position.y == draggable.position.y && cube.position.z == draggable.position.z) {
+        minus = cube.position.x
+        console.log("x-1", cube.position)
+      }
+        
+      if (cube.position.x == draggable.position.x + 1 && cube.position.y == draggable.position.y && cube.position.z == draggable.position.z) {
+        plus = cube.position.x
+        console.log("x+1", cube.position)
+      }
+    }
+    console.log(plus - oldX, minus - oldX, Math.max(plus - oldX, minus - oldX))
+    if (plus - oldY < oldY) console.log("plus is bigger than minus"); else console.log("minus is bigger than plus")
 
     raycaster.setFromCamera(mouseVector, camera)
     const intersect = raycaster.intersectObjects(scene.children)
@@ -162,17 +202,10 @@ function dragObject() {
 
         let targetRotation = Math.PI / 2;
 
-        /*
-        else if (draggable.position.x == -1 && draggable.position.z == 0) {
-          for (var cube of center) {
-            bufferGroup.add(cube)
-          }
-          rotateGroup(bufferGroup, -targetRotation, zAxis)
-        }*/
         if (horizontal) {
             for (var cube of toRotateY) {
               toRotateGroup.add(cube)
-              console.log(cube.position)
+              
               if (toRotateY.length == 9)
               if (direction == "right")
               rotateGroup(toRotateGroup, targetRotation, yAxis)
@@ -185,10 +218,13 @@ function dragObject() {
               if (toRotateX.length == 9)
             
               if (direction == 'top')
-                if (draggable.position.x == -1) {
-                  if (draggable.position.z == 1) 
+
+                // LEFT SIDE HANDLING
+                if (draggable.position.x == -1 && plus - oldX < oldX) {
+                  if (draggable.position.z == 1) {
                     for (var cube of front) 
                       toRotateGroup.add(cube)
+                  }
                     
                   else if (draggable.position.z == 0) 
                     for (var cube of center) 
@@ -199,14 +235,42 @@ function dragObject() {
                       toRotateGroup.add(cube)
                   
                   rotateGroup(toRotateGroup, -targetRotation, zAxis)
-                } else {
+                } else if (draggable.position.z == 1 && plus - oldX > oldX) {
+                  for (var cube of left) 
+                    toRotateGroup.add(cube)
+                  rotateGroup(toRotateGroup, targetRotation, xAxis)
+                } 
+                
+                // RIGHT SIDE HANDLING
+                else if (draggable.position.x == 1 && plus - oldY > oldY) {
+                  if (draggable.position.z == 1) {
+                    for (var cube of front) 
+                      toRotateGroup.add(cube)
+                  }
+                    
+                  else if (draggable.position.z == 0) 
+                    for (var cube of center) 
+                      toRotateGroup.add(cube)
+
+                  else if (draggable.position.z == -1) 
+                    for (var cube of back) 
+                      toRotateGroup.add(cube)
+                  
+                  rotateGroup(toRotateGroup, targetRotation, zAxis)
+                } 
+                else if (draggable.position.z == 1 && plus - oldY < oldY) {
+                  for (var cube of right) 
+                    toRotateGroup.add(cube)
+                  rotateGroup(toRotateGroup, -targetRotation, xAxis) 
+                }
+                else {
                   for (var cube of toRotateX)
                     toRotateGroup.add(cube)
                   rotateGroup(toRotateGroup, -targetRotation*draggable.position.z, xAxis)
                 }
               
             else if (direction == "bottom")
-              if (draggable.position.x == -1) {
+              if (draggable.position.x == -1 && plus - oldX < oldX) {
                 if (draggable.position.z == 1) 
                   for (var cube of front) 
                     toRotateGroup.add(cube)
@@ -220,7 +284,35 @@ function dragObject() {
                     toRotateGroup.add(cube)
                 
                 rotateGroup(toRotateGroup, targetRotation, zAxis)
-              } else {
+              } else if (draggable.position.z == -1 && plus - oldX > oldX) {
+                for (var cube of left) 
+                  toRotateGroup.add(cube)
+                rotateGroup(toRotateGroup, -targetRotation, xAxis)
+              }
+              // RIGHT SIDE HANDLING
+              else if (draggable.position.x == 1 && plus - oldY < oldY) {
+                if (draggable.position.z == 1) {
+                  console.log('front')
+                  for (var cube of front) 
+                    toRotateGroup.add(cube)
+                }
+                  
+                else if (draggable.position.z == 0) 
+                  for (var cube of center) 
+                    toRotateGroup.add(cube)
+
+                else if (draggable.position.z == -1) 
+                  for (var cube of back) 
+                    toRotateGroup.add(cube)
+                
+                rotateGroup(toRotateGroup, -targetRotation, zAxis)
+              } 
+              else if (draggable.position.z == 1 && plus - oldY < oldY) {
+                for (var cube of right) 
+                  toRotateGroup.add(cube)
+                
+              }
+              else {
                 for (var cube of toRotateX)
                   toRotateGroup.add(cube)
                 rotateGroup(toRotateGroup, targetRotation*draggable.position.z, xAxis)
