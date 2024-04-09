@@ -71,8 +71,8 @@ for (let i = start; i < cubesNumber-1; i+=1) {
 for (var cube of cubes)
   scene.add(cube)
 
-const axesHelper = new THREE.AxesHelper( 5 );
-scene.add( axesHelper );
+// const axesHelper = new THREE.AxesHelper( 5 );
+// scene.add( axesHelper );
 
 const raycaster = new THREE.Raycaster()
 let position: THREE.Vector3 = new THREE.Vector3(0, 0, 0)
@@ -101,6 +101,7 @@ window.addEventListener('click', event => {
     for (var sect of intersects) {
       if (sect.object.userData.draggable) {
         draggable = sect.object
+        console.log("draggable", draggable.position)
         position = sect.object.position
       break
       }
@@ -200,7 +201,6 @@ function dragObject() {
         const toRotateGroup = new THREE.Group()
 
         let targetRotation = Math.PI / 2;
-        console.log("draggable", draggable.position)
 
         if (horizontal) {
             for (var cube of toRotateY) {
@@ -213,15 +213,12 @@ function dragObject() {
              
               rotateGroup(toRotateGroup, targetRotation*-1, yAxis)
             }
-        } else if (!horizontal) {
-            
-              if (toRotateX.length == 9)
-            
-              if (direction == 'top')
-
-                // LEFT SIDE HANDLING
-
-                if (draggable.position.x == -1 && Math.abs(plusX) < Math.abs(minusX)) {
+        } else if (!horizontal) {  
+          if (toRotateX.length == 9)
+            if (direction == 'top') {
+              // LEFT SIDE HANDLING
+              if (draggable.position.x == -1) {
+                if (Math.abs(plusX) < Math.abs(minusX)) {
                   if (draggable.position.z == 1) {
                     for (var cube of front) 
                       toRotateGroup.add(cube)
@@ -237,72 +234,92 @@ function dragObject() {
                   
                   rotateGroup(toRotateGroup, -targetRotation, zAxis)
                 }
-              
-                
-                // RIGHT SIDE HANDLING
-                else if (draggable.position.x == 1 && Math.abs(plusX) > Math.abs(minusX)) {
+                else {
+                  for (var cube of left) 
+                    toRotateGroup.add(cube)
+                  rotateGroup(toRotateGroup, -targetRotation, xAxis)
+                }
+              } 
+
+              // RIGHT SIDE HANDLING
+              else if (draggable.position.x == 1) {
+                if (Math.abs(plusX) > Math.abs(minusX)) {
                   if (draggable.position.z == 1) {
-                    console.log("FIRE")
                     for (var cube of front) 
                       toRotateGroup.add(cube)
                   }
                     
-                  else if (draggable.position.z == 0) 
+                  else if (draggable.position.z == 0) {
                     for (var cube of center) 
                       toRotateGroup.add(cube)
+                  }
 
                   else if (draggable.position.z == -1) 
                     for (var cube of back) 
                       toRotateGroup.add(cube)
                   
                   rotateGroup(toRotateGroup, targetRotation, zAxis)
-                } 
-               
-                else {
-                  for (var cube of toRotateX)
-                    toRotateGroup.add(cube)
-                  rotateGroup(toRotateGroup, -targetRotation*draggable.position.z, xAxis)
+                } else {
+                    for (var cube of right) 
+                      toRotateGroup.add(cube)
+                  rotateGroup(toRotateGroup, -targetRotation, xAxis)
                 }
-              
-            else if (direction == "bottom")
-              if (draggable.position.x == -1 && Math.abs(plusX) < Math.abs(minusX)) {
-                if (draggable.position.z == 1) 
-                  for (var cube of front) 
-                    toRotateGroup.add(cube)
-                  
-                else if (draggable.position.z == 0) 
-                  for (var cube of center) 
-                    toRotateGroup.add(cube)
-
-                else if (draggable.position.z == -1) 
-                  for (var cube of back) 
-                    toRotateGroup.add(cube)
-                
-                rotateGroup(toRotateGroup, targetRotation, zAxis)
               }
-              // RIGHT SIDE HANDLING
-              else if (draggable.position.x == 1 && Math.abs(plusX) > Math.abs(minusX)) {
-                if (draggable.position.z == 1) {
-                  for (var cube of front) 
-                    toRotateGroup.add(cube)
-                }
-                  
-                else if (draggable.position.z == 0) 
-                  for (var cube of center) 
-                    toRotateGroup.add(cube)
-
-                else if (draggable.position.z == -1) 
-                  for (var cube of back) 
-                    toRotateGroup.add(cube)
-                
-                rotateGroup(toRotateGroup, -targetRotation, zAxis)
-              } 
-             
               else {
                 for (var cube of toRotateX)
                   toRotateGroup.add(cube)
-                rotateGroup(toRotateGroup, targetRotation*draggable.position.z, xAxis)
+                rotateGroup(toRotateGroup, -targetRotation*draggable.position.z, xAxis)
               }
+            }
+            else if (direction == "bottom")
+              // LEFT SIDE
+              if (draggable.position.x == -1) {
+                if (Math.abs(plusX) < Math.abs(minusX)) {
+                  if (draggable.position.z == 1) 
+                    for (var cube of front) 
+                      toRotateGroup.add(cube)
+                    
+                  else if (draggable.position.z == 0) 
+                    for (var cube of center) 
+                      toRotateGroup.add(cube)
+
+                  else if (draggable.position.z == -1) {
+                    for (var cube of back) 
+                      toRotateGroup.add(cube)
+                  }
+                  rotateGroup(toRotateGroup, targetRotation, zAxis)
+                } 
+                else {
+                  for (var cube of left) 
+                    toRotateGroup.add(cube)
+                  rotateGroup(toRotateGroup, targetRotation, xAxis)
+                }
+                
+              }
+
+            // RIGHT SIDE HANDLING
+            else if (draggable.position.x == 1 && Math.abs(plusX) > Math.abs(minusX)) {
+              if (draggable.position.z == 1) {
+                for (var cube of front) 
+                  toRotateGroup.add(cube)
+              }
+                
+              else if (draggable.position.z == 0) 
+                for (var cube of center) 
+                  toRotateGroup.add(cube)
+
+              else if (draggable.position.z == -1) 
+                for (var cube of back) 
+                  toRotateGroup.add(cube)
+              
+              rotateGroup(toRotateGroup, -targetRotation, zAxis)
+            } 
+            
+            else {
+              for (var cube of toRotateX)
+                toRotateGroup.add(cube)
+              rotateGroup(toRotateGroup, targetRotation*draggable.position.z, xAxis)
+            }
           }
         scene.add(toRotateGroup)
         
