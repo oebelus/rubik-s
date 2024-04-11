@@ -148,29 +148,19 @@ window.addEventListener('mousemove', (event) => {
   draggable = null; 
 })
 
+const directions: Record<string, number> = {
+  "bottom": 1,
+  "top": -1,
+}
+
 function dragObject() {
   if (draggable != null) {
-    let plusX = 0
-    let minusX = 0
+    let plusX = Math.abs(Math.round(clickedX+1) - clickedX)
+    let minusX = Math.abs(Math.round(clickedX-1) - clickedX)
 
-    for (cube of cubes) {
-      if (cube.position.x == Math.floor(clickedX - 1) - 1 || cube.position.x == Math.ceil(clickedX - 1) - 1) {
-        minusX = cube.position.x
-        console.log("x-1", cube.position)
-        console.log("minusXX: ", minusX)
-        break
-      }
-        
-      if (cube.position.x == Math.floor(clickedX - 1) + 1 || cube.position.x == Math.ceil(clickedX - 1) + 1) {
-        plusX = cube.position.x
-        console.log("x+1", cube.position)
-        console.log("plusX", plusX)
-        break
-      }
-    }
     console.log("clickedX:", clickedX, "newX:", newX, "clickedY:", clickedY, "newY:", newY)
     
-    if (Math.abs(plusX) > Math.abs(minusX)) console.log("plusX is bigger than minusX"); else console.log("minusX is bigger than plusX")
+    if (Math.abs(Math.round(clickedX+1) - clickedX) > Math.abs(Math.round(clickedX-1) - clickedX)) console.log(plusX-clickedX, "plusX is bigger than minusX"); else console.log(minusX-clickedX, "minusX is bigger than plusX")
       console.log("plusX: ", plusX - clickedX, "minusX: ", minusX - clickedX)
 
     raycaster.setFromCamera(mouseVector, camera)
@@ -196,8 +186,8 @@ function dragObject() {
         const right: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.x == 1)
         const bottom: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.y == -1)
         const top: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.z == 1)
-        const center: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.z == 0)
-
+        const center_side: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.z == 0)
+        const center_face: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.MeshBasicMaterial, THREE.Object3DEventMap>[] = cubes.filter(cube => cube.position.x == 0)
         const toRotateGroup = new THREE.Group()
 
         let targetRotation = Math.PI / 2;
@@ -213,50 +203,58 @@ function dragObject() {
              
               rotateGroup(toRotateGroup, targetRotation*-1, yAxis)
             }
-        } else if (!horizontal) {  
-          if (toRotateX.length == 9)
-            if (direction == 'top') {
+        } else if (!horizontal) { 
+            if (draggable.position.x == 0) {
+              for (var cube of center_face)
+                toRotateGroup.add(cube)
+              
+              rotateGroup(toRotateGroup, draggable.position.y*targetRotation*draggable.position.z*directions[direction], xAxis)
+            } else if (draggable.position.z == 0) {
+              for (var cube of center_side) 
+                toRotateGroup.add(cube)
+               rotateGroup(toRotateGroup, draggable.position.y*draggable.position.x*targetRotation*directions[direction]*-1, zAxis)
+            }
+            else if (direction == 'top') {
               // LEFT SIDE HANDLING
-              if (draggable.position.x == -1) {
-                if (Math.abs(plusX) < Math.abs(minusX)) {
+              if (draggable.position.x == -1 && draggable.position.z != -1) {
+                if (plusX < minusX) {
                   if (draggable.position.z == 1) {
                     for (var cube of front) 
                       toRotateGroup.add(cube)
                   }
                     
                   else if (draggable.position.z == 0) 
-                    for (var cube of center) 
-                      toRotateGroup.add(cube)
-
-                  else if (draggable.position.z == -1) 
-                    for (var cube of back) 
+                    for (var cube of center_side) 
                       toRotateGroup.add(cube)
                   
                   rotateGroup(toRotateGroup, -targetRotation, zAxis)
                 }
                 else {
-                  for (var cube of left) 
-                    toRotateGroup.add(cube)
+                  if (draggable.position.z == 0) {
+                    for (var cube of center_side) 
+                      toRotateGroup.add(cube)
+                    rotateGroup(toRotateGroup, -targetRotation, zAxis)
+                  }
+                  else {
+                    for (var cube of left) 
+                      toRotateGroup.add(cube)
                   rotateGroup(toRotateGroup, -targetRotation, xAxis)
+                  }
                 }
               } 
 
               // RIGHT SIDE HANDLING
-              else if (draggable.position.x == 1) {
-                if (Math.abs(plusX) > Math.abs(minusX)) {
+              else if (draggable.position.x == 1 && draggable.position.z != -1) {
+                if (plusX > minusX) {
                   if (draggable.position.z == 1) {
                     for (var cube of front) 
                       toRotateGroup.add(cube)
                   }
                     
                   else if (draggable.position.z == 0) {
-                    for (var cube of center) 
+                    for (var cube of center_side) 
                       toRotateGroup.add(cube)
                   }
-
-                  else if (draggable.position.z == -1) 
-                    for (var cube of back) 
-                      toRotateGroup.add(cube)
                   
                   rotateGroup(toRotateGroup, targetRotation, zAxis)
                 } else {
@@ -264,57 +262,108 @@ function dragObject() {
                       toRotateGroup.add(cube)
                   rotateGroup(toRotateGroup, -targetRotation, xAxis)
                 }
+              } 
+
+              // BACK SIDE HANDLING
+              else if (draggable.position.z == -1) {
+                if (draggable.position.x == 1) {
+                  if (plusX < minusX) {
+                    for (var cube of back)
+                      toRotateGroup.add(cube)
+                    rotateGroup(toRotateGroup, targetRotation, zAxis)
+                  } else {
+                    for (var cube of right)
+                      toRotateGroup.add(cube)
+                    rotateGroup(toRotateGroup, targetRotation, xAxis)
+                  }
+                } else if (draggable.position.x == -1) {
+                  if (plusX > minusX) {
+                    for (var cube of back)
+                      toRotateGroup.add(cube)
+                    rotateGroup(toRotateGroup, -targetRotation, zAxis)
+                  } else {
+                    for (var cube of left)
+                      toRotateGroup.add(cube)
+                    rotateGroup(toRotateGroup, -targetRotation, xAxis)
+                  }
+                }
               }
-              else {
-                for (var cube of toRotateX)
-                  toRotateGroup.add(cube)
-                rotateGroup(toRotateGroup, -targetRotation*draggable.position.z, xAxis)
+                else {
+                  for (var cube of toRotateX)
+                    toRotateGroup.add(cube)
+                  rotateGroup(toRotateGroup, -targetRotation*draggable.position.z, xAxis)
+                }
               }
-            }
-            else if (direction == "bottom")
+            
+            else if (direction == "bottom") 
               // LEFT SIDE
-              if (draggable.position.x == -1) {
-                if (Math.abs(plusX) < Math.abs(minusX)) {
+              if (draggable.position.x == 0) {
+                for (var cube of center_side)
+                  toRotateGroup.add(cube)
+                rotateGroup(toRotateGroup, -targetRotation, xAxis)
+              }
+              else if (draggable.position.x == -1 && draggable.position.z != -1) {
+                if (plusX < minusX) {
                   if (draggable.position.z == 1) 
                     for (var cube of front) 
                       toRotateGroup.add(cube)
                     
-                  else if (draggable.position.z == 0) 
-                    for (var cube of center) 
-                      toRotateGroup.add(cube)
-
-                  else if (draggable.position.z == -1) {
-                    for (var cube of back) 
-                      toRotateGroup.add(cube)
-                  }
                   rotateGroup(toRotateGroup, targetRotation, zAxis)
                 } 
                 else {
-                  for (var cube of left) 
-                    toRotateGroup.add(cube)
-                  rotateGroup(toRotateGroup, targetRotation, xAxis)
+                  if (draggable.position.z == 0) {
+                    for (var cube of center_side) 
+                      toRotateGroup.add(cube)
+                    rotateGroup(toRotateGroup, targetRotation, zAxis)
+                    }
+                  else { 
+                    for (var cube of left) 
+                      toRotateGroup.add(cube)
+                    rotateGroup(toRotateGroup, targetRotation, xAxis)
+                  }
                 }
                 
               }
 
             // RIGHT SIDE HANDLING
-            else if (draggable.position.x == 1 && Math.abs(plusX) > Math.abs(minusX)) {
-              if (draggable.position.z == 1) {
-                for (var cube of front) 
-                  toRotateGroup.add(cube)
-              }
-                
-              else if (draggable.position.z == 0) 
-                for (var cube of center) 
+            else if (draggable.position.x == 1 && draggable.position.z != -1)
+              if (plusX > minusX) {
+                if (draggable.position.z == 1) {
+                  for (var cube of front) 
+                    toRotateGroup.add(cube)
+                }
+
+                rotateGroup(toRotateGroup, -targetRotation, zAxis)
+            } else {
+              for (var cube of right) 
+                toRotateGroup.add(cube)
+              rotateGroup(toRotateGroup, targetRotation, xAxis)
+            }
+
+            // BACK SIDE HANDLING
+            else if (draggable.position.z == -1 && draggable.position.x != -1) {
+              if (plusX < minusX) {
+                for (var cube of back)
                   toRotateGroup.add(cube)
 
-              else if (draggable.position.z == -1) 
-                for (var cube of back) 
+                rotateGroup(toRotateGroup, -targetRotation, zAxis)
+              } else {
+                if (draggable.position.x == 1)
+                  for (var cube of right)
+                    toRotateGroup.add(cube)
+                rotateGroup(toRotateGroup, -targetRotation, xAxis)
+              }
+            } else if (draggable.position.x == -1) {
+              if (plusX > minusX) {
+                for (var cube of back)
                   toRotateGroup.add(cube)
-              
-              rotateGroup(toRotateGroup, -targetRotation, zAxis)
-            } 
-            
+                rotateGroup(toRotateGroup, targetRotation, zAxis)
+              } else {
+                for (var cube of left)
+                  toRotateGroup.add(cube)
+                rotateGroup(toRotateGroup, targetRotation, xAxis)
+              }
+            }
             else {
               for (var cube of toRotateX)
                 toRotateGroup.add(cube)
@@ -377,6 +426,8 @@ x = 1 => RIGHT
 z = -1 => BACK
 y = 1 => TOP
 y = -1 => BOTTOM
+x = 0 => center_side FACE
+z = 0 => center_side SIDE
 
 Object { x: -1, y: -1, z: -1 } LEFT BACK
 Object { x: -1, y: -1, z: 0 } LEFT
