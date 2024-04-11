@@ -80,7 +80,7 @@ for (var cube of cubes)
 
 const raycaster = new THREE.Raycaster()
 
-var draggable: THREE.Object3D | null = null
+let draggable: THREE.Object3D | null = null
 let clicked = false
 
 let oldX = 0
