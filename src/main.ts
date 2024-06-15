@@ -339,8 +339,8 @@ function dragObject() {
               if (draggable.position.x == 0) {
                 for (var cube of center_face)
                   toRotateGroup.add(cube)
-                if (minusY > plusY) rotateGroup(toRotateGroup, -targetRotation, xAxis)
-                else if (plusY > minusY) rotateGroup(toRotateGroup, targetRotation, xAxis)
+                if (minusY > plusY) rotateGroup(toRotateGroup, targetRotation, xAxis)
+                else if (plusY > minusY) rotateGroup(toRotateGroup, -targetRotation, xAxis)
               }
               else if (plusX < minusX) {
               
